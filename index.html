@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Simulasi 3D Lampu Malam Otomatis</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#e9e9ea;--panel:#fbfbfb;--ink:#17181a;--mut:#64676c;--line:#d3d5d8;--acc:#d92d20;--floor:#dcdde0;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1b1d21;--panel:#25282d;--ink:#eceef0;--mut:#9aa0a6;--line:#3a3e44;--floor:#2a2d33;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1b1d21;--panel:#25282d;--ink:#eceef0;--mut:#9aa0a6;--line:#3a3e44;--floor:#2a2d33;color-scheme:dark}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.45 "Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden}
+#c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;outline:none}
+#panel{position:fixed;left:10px;top:calc(10px + env(safe-area-inset-top,0px));width:252px;max-height:calc(100% - 20px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px}
+#panel h1{font-size:15px;margin:0;font-weight:650;flex:1}
+.hd{display:flex;align-items:center;gap:8px}
+.sec{margin-top:12px}.sec>b{display:block;font-size:12px;color:var(--mut);font-weight:600;margin-bottom:5px}
+.g{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+button{font:inherit;color:var(--ink);background:transparent;border:1px solid var(--line);border-radius:8px;padding:7px 8px;cursor:pointer}
+button:hover:not(:disabled){background:var(--line)}button:disabled{opacity:.4;cursor:default}
+button.on{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+button.pri{background:var(--acc);border-color:var(--acc);color:#fff}
+button:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+input[type=range]{width:100%;accent-color:var(--acc)}
+.sm{font-size:12px;color:var(--mut);margin:6px 0 0}
+#panel.min .body{display:none}
+#hud{position:fixed;right:10px;top:calc(10px + env(safe-area-inset-top,0px));background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-variant-numeric:tabular-nums;min-width:150px;pointer-events:none}
+#hud i{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--line);margin-right:6px}
+#hud i.on{background:var(--acc);box-shadow:0 0 8px var(--acc)}
+#cap{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--panel);padding:9px 16px;border-radius:999px;max-width:90%;text-align:center}
+#toast{position:fixed;left:50%;top:calc(60px + env(safe-area-inset-top,0px));transform:translateX(-50%);background:var(--ink);color:var(--panel);padding:7px 14px;border-radius:8px;opacity:0;transition:opacity .25s;pointer-events:none}
+#toast.s{opacity:1}[hidden]{display:none!important}
+#vid{position:fixed;inset:0;width:100%;height:100%;object-fit:cover}
+#arst{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 14px;pointer-events:none;white-space:nowrap}
+#mk{position:fixed;inset:0;z-index:9;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:var(--bg);padding:16px}
+#mkc{width:min(78vw,52vh);height:auto;border:1px solid var(--line)}
+@media (max-width:720px){#arst{bottom:calc(70px + env(safe-area-inset-bottom,0px))}}
+.scr{position:fixed;inset:0;z-index:8;background:var(--bg);overflow:auto;padding:calc(18px + env(safe-area-inset-top,0px)) 16px calc(24px + env(safe-area-inset-bottom,0px))}
+.wrap{max-width:720px;margin:0 auto}
+.scr h1{font-size:26px;line-height:1.15;margin:8px 0 6px}.scr h2{font-size:20px;margin:6px 0 10px}
+.lead{color:var(--mut);margin:0 0 18px;max-width:60ch}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
+.card{text-align:left;padding:14px 14px 14px 16px;background:var(--panel);border:1px solid var(--line);border-left:5px solid var(--c,var(--acc));border-radius:10px}
+.card b{display:block;font-size:16px;margin-bottom:3px}.card span{color:var(--mut);font-size:13px}
+details{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 14px;margin-bottom:8px}
+summary{cursor:pointer;font-weight:600}details[open] summary{margin-bottom:8px}
+details p,details li{max-width:62ch}
+.fm{font-family:ui-monospace,Menlo,Consolas,monospace;background:var(--bg);padding:6px 10px;border-radius:6px;display:inline-block}
+.opt{display:block;width:100%;text-align:left;margin-bottom:8px;background:var(--panel)}.opt.ok{border-color:#1f9d4a;background:rgba(31,157,74,.2)}.opt.bad{border-color:var(--acc);background:rgba(217,45,32,.16)}
+.bar{display:flex;gap:8px;margin:14px 0;flex-wrap:wrap}
+.body .sec:first-child,#tour{display:none}
+#panel{box-shadow:0 10px 32px rgba(0,0,0,.18)}button{transition:background .15s,border-color .15s}
+.top{display:flex;align-items:center;gap:12px;margin-bottom:14px}.top h2{margin:0;font-size:22px;font-weight:800}.top button{padding:6px 14px;border-radius:999px}
+summary{list-style:none}summary::-webkit-details-marker{display:none}
+summary::before{content:"";display:inline-block;width:7px;height:7px;border-right:2px solid var(--acc);border-bottom:2px solid var(--acc);transform:rotate(-45deg);margin-right:12px;transition:transform .15s}
+details[open] summary::before{transform:rotate(45deg)}
+details{padding:12px 16px}details ul,details ol{padding-left:20px;margin:6px 0}
+.opt{padding:12px 14px;border-radius:10px}
+#home{background:radial-gradient(700px 360px at 85% -5%,rgba(217,45,32,.30),transparent 62%),radial-gradient(500px 300px at 0% 100%,rgba(47,95,208,.22),transparent 60%),#0e1320;color:#eef1f7}
+#home .wrap{max-width:760px;padding-top:5vh}
+#home h1{font-size:clamp(32px,7vw,48px);font-weight:800;letter-spacing:-.02em;line-height:1.05;margin:14px 0 12px}
+#home .lead{color:#a9b1c3;font-size:16px;max-width:52ch;margin-bottom:26px}
+#home .card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-top:3px solid var(--c);border-radius:12px;color:#eef1f7;padding:16px}
+#home .card:hover:not(:disabled){background:rgba(255,255,255,.13)}
+#home .card span{color:#a9b1c3}#home .card b{font-size:17px}
+.ci{width:28px;height:28px;display:block;margin-bottom:10px;fill:none;stroke:var(--c);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.trace{width:min(380px,86%);height:auto;overflow:visible;display:block}
+.trace path{fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.trace .b{stroke:rgba(255,255,255,.22)}.trace .f{stroke:#ffc933;stroke-dasharray:2 14;animation:fl 1.2s linear infinite}
+.trace .led{fill:#ff3b2f;filter:drop-shadow(0 0 10px #ff3b2f);animation:gl 2.4s ease-in-out infinite}
+@keyframes fl{to{stroke-dashoffset:-16}}@keyframes gl{50%{opacity:.4}}
+@media (prefers-reduced-motion:reduce){.trace .f,.trace .led{animation:none}}
+@media (max-width:720px){
+#panel{left:0;right:0;top:auto;bottom:0;width:auto;max-height:42%;border-radius:14px 14px 0 0;padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))}
+#hud{left:10px;right:auto;font-size:12px;padding:6px 10px;min-width:0}
+#cap{bottom:calc(46% + 6px)}}
+@media (prefers-reduced-motion:reduce){#toast{transition:none}}
+</style></head><body>
+<video id="vid" playsinline muted autoplay hidden></video>
+<canvas id="c" tabindex="0" aria-label="Tampilan 3D rangkaian"></canvas>
+<div id="hud"><div id="h1"></div><div id="h2"></div><div id="h3"></div><div id="h4"></div></div>
+<div id="cap" hidden></div><div id="arst" hidden></div><div id="toast" role="status"></div>
+<div id="mk" hidden><canvas id="mkc" width="700" height="700"></canvas><p class="sm" style="max-width:340px;text-align:center">Tampilkan marker ini di layar lain atau cetak, dengan tepi putih tetap utuh. Lalu arahkan kamera dari mode AR.</p><div class="g"><button id="mkd" class="pri">Unduh PNG</button><button id="mkx">Tutup</button></div></div>
+<div id="panel"><div class="hd"><h1>Lampu malam otomatis</h1><button id="hb">Beranda</button><button id="min" aria-label="Ciutkan menu">Menu</button></div>
+<div class="body">
+<div class="sec"><b>Kamera</b><div class="g"><button id="auto">Auto-rotasi</button><button data-v="iso">Isometrik</button><button data-v="top">Atas</button><button data-v="front">Depan</button></div>
+<p class="sm">Seret untuk memutar, Shift atau klik kanan untuk menggeser, roda atau cubit untuk zoom.</p></div>
+<div class="sec"><b>Cahaya sekitar: <span id="lv">90</span>%</b><input id="light" type="range" min="0" max="100" value="90" aria-label="Cahaya sekitar"></div>
+<div class="sec"><b>Saklar dan arus</b><div class="g"><button id="sw" class="on">Saklar: ON</button><button id="flow" class="on">Aliran arus</button></div>
+<p class="sm">Saklar juga bisa diklik langsung di tampilan 3D (atau tekan S).</p></div>
+<div class="sec"><b>Mode AR (kamera + marker)</b><div class="g"><button id="ar">Mulai AR</button><button id="mkb">Lihat marker</button></div>
+<label class="sm" style="display:block">Ukuran model <input id="arsz" type="range" min="8" max="60" value="22"></label>
+<p class="sm">Rangkaian muncul di atas marker. Saklar tetap bisa disentuh.</p></div>
+<div class="sec"><div class="g"><button id="tour" class="pri">Tur sinematik</button><button id="lab" class="on">Label</button><button id="shot">Screenshot PNG</button><button id="reset">Reset</button></div></div>
+</div></div>
+<section class="scr" id="home"><div class="wrap">
+<svg class="trace" viewBox="0 0 360 100" aria-hidden="true"><path class="b" d="M6 80H60V30H120l8-16 14 32 14-32 14 32 8-16H250V80H354"/><path class="f" d="M6 80H60V30H120l8-16 14 32 14-32 14 32 8-16H250V80H354"/><circle class="led" cx="250" cy="56" r="11"/></svg>
+<h1>Lampu malam otomatis</h1>
+<p class="lead">Media belajar rangkaian LDR dan transistor NPN. Baca materinya, lihat rangkaiannya lewat kamera AR, lalu uji pemahamanmu dengan kuis.</p>
+<div class="cards">
+<button class="card" data-go="mat" style="--c:#4f86ff"><svg class="ci" viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM4 21V5M8 7h7"/></svg><b>Materi</b><span>Komponen, pembagi tegangan, dan cara kerja rangkaian</span></button>
+<button class="card" data-go="ar" style="--c:#2fc46a"><svg class="ci" viewBox="0 0 24 24"><path d="M3 8h4l2-3h6l2 3h4v11H3zM12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/></svg><b>Kamera AR</b><span>Tampilkan rangkaian 3D di atas marker</span></button>
+
+<button class="card" data-go="quiz" style="--c:#f2b230"><svg class="ci" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17v.01"/></svg><b>Kuis</b><span>6 soal pilihan ganda dengan pembahasan</span></button>
+<button class="card" data-go="marker" style="--c:#b86bff"><svg class="ci" viewBox="0 0 24 24"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2zM18 18h2v2h-2zM14 18h2M18 14h2"/></svg><b>Marker AR</b><span>Tampilkan atau unduh marker untuk dicetak</span></button>
+<button class="card" data-go="help" style="--c:#ff6a5f"><svg class="ci" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 11v6M12 7.5v.01"/></svg><b>Petunjuk</b><span>Cara memakai kamera AR dan simulasi</span></button>
+</div></div></section>
+<section class="scr" id="mat" hidden><div class="wrap"><header class="top"><button data-go="home">Beranda</button><h2>Materi</h2></header>
+<details open><summary>1. Tujuan rangkaian</summary><p>Rangkaian ini bekerja sebagai lampu malam otomatis: LED padam saat ruangan terang dan menyala sendiri saat gelap, tanpa saklar manual. Sensornya adalah LDR (Light Dependent Resistor).</p></details>
+<details><summary>2. Mengenal komponen</summary><ul>
+<li><b>Baterai 9V</b>: sumber tegangan rangkaian.</li>
+<li><b>Saklar</b>: menyambung atau memutus arus dari baterai.</li>
+<li><b>R1 10 kΩ</b>: bersama LDR membentuk pembagi tegangan.</li>
+<li><b>LDR1</b>: hambatannya turun saat terang dan naik saat gelap.</li>
+<li><b>R2 1 kΩ</b>: membatasi arus yang masuk ke basis transistor.</li>
+<li><b>Transistor NPN 2N2222</b>: saklar elektronik. Arus kecil di basis mengendalikan arus lebih besar dari kolektor ke emitor.</li>
+<li><b>LED merah</b>: menyala saat dialiri arus dari kolektor.</li></ul>
+<p>Catatan: pada rangkaian nyata, LED sebaiknya diberi resistor seri agar arusnya aman.</p></details>
+<details><summary>3. Pembagi tegangan R1 dan LDR</summary>
+<p>Tegangan di titik basis ditentukan oleh perbandingan R1 dan LDR:</p><p class="fm">Vb = 9 V × R_LDR ÷ (R1 + R_LDR)</p>
+<p>Terang, R_LDR sekitar 500 Ω: Vb sekitar 0,43 V. Gelap, R_LDR sekitar 1 MΩ: Vb sekitar 8,9 V.</p>
+<p>Coba geser cahaya: <input id="cc" type="range" min="0" max="100" value="90" style="max-width:240px;vertical-align:middle" aria-label="Cahaya"></p><p class="fm" id="co"></p></details>
+<details><summary>4. Transistor sebagai saklar</summary><p>Transistor NPN mulai menghantar saat tegangan basis-emitor sekitar 0,7 V. Di bawah itu jalur kolektor ke emitor terputus. Di atasnya, arus basis lewat R2 membuka jalur tersebut sehingga LED menyala.</p></details>
+<details><summary>5. Cara kerja: terang dan gelap</summary><ul>
+<li><b>Terang</b>: LDR kecil, Vb rendah (di bawah 0,7 V), transistor mati, LED padam.</li>
+<li><b>Gelap</b>: LDR besar, Vb tinggi, transistor menghantar, LED menyala.</li></ul>
+<p>Di mode AR, bola kuning menunjukkan arah arus: dari kutub positif baterai lewat saklar, bercabang ke R1 dan LDR, R2 dan basis, serta LED dan kolektor, lalu kembali ke kutub negatif.</p></details>
+<details><summary>6. Latihan di AR</summary><ol><li>Geser cahaya ke gelap, amati LED dan kecepatan arus.</li><li>Matikan saklar, amati apa yang berubah.</li><li>Jelaskan alasannya dengan kata-katamu sendiri.</li></ol></details>
+<div class="bar"><button class="pri" data-go="ar">Lihat di AR</button><button data-go="quiz">Kerjakan kuis</button><button data-go="home">Beranda</button></div></div></section>
+<section class="scr" id="quiz" hidden><div class="wrap"><header class="top"><button data-go="home">Beranda</button><h2>Kuis</h2></header><p class="lead" id="qp"></p><p id="qt" style="font-size:17px;font-weight:600"></p><div id="qo"></div><p id="qe"></p>
+<div class="bar"><button id="qn" class="pri" hidden>Lanjut</button><button data-go="home">Beranda</button></div></div></section>
+<section class="scr" id="help" hidden><div class="wrap"><header class="top"><button data-go="home">Beranda</button><h2>Petunjuk</h2></header>
+<details open><summary>Memakai kamera AR</summary><ol><li>Buka Marker AR, lalu tampilkan di layar lain atau cetak.</li><li>Tekan Kamera AR dan izinkan akses kamera.</li><li>Arahkan kamera ke marker, rangkaian muncul di atasnya.</li><li>Atur ukuran model dengan slider, dan sentuh saklar pada model.</li></ol></details>
+<details><summary>Kontrol simulasi</summary><ul><li>Slider cahaya mengatur terang atau gelap ruangan.</li><li>Tombol S atau tombol Saklar menyambung dan memutus arus.</li><li>Screenshot PNG menyimpan tampilan, termasuk gambar kamera.</li><li>Tombol Beranda kembali ke menu utama.</li></ul></details>
+<details><summary>Jika kamera tidak terbuka</summary><p>Izinkan akses kamera di browser, atau buka halaman ini langsung di tab browser. Pastikan marker terang merata, tidak silau, dan tepi putihnya terlihat utuh.</p></details>
+<div class="bar"><button data-go="home">Beranda</button></div></div></section>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const $=s=>document.querySelector(s),V3=THREE.Vector3,cl=(v,a,b)=>Math.min(b,Math.max(a,v));
+const cv=$('#c'),R=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true,preserveDrawingBuffer:true});
+R.shadowMap.enabled=true;R.shadowMap.type=THREE.PCFSoftShadowMap;
+const S=new THREE.Scene(),cam=new THREE.PerspectiveCamera(40,1,.1,200);
+const amb=new THREE.HemisphereLight(0xffffff,0x8a8d94,1);S.add(amb);
+const sun=new THREE.DirectionalLight(0xffffff,1);sun.position.set(-6,14,8);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
+Object.assign(sun.shadow.camera,{left:-15,right:15,top:15,bottom:-15,far:45});S.add(sun);
+const pl=new THREE.PointLight(0xff2a1a,0,9);pl.position.set(2.1,1.8,-3);S.add(pl);
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(90,90),new THREE.MeshStandardMaterial({roughness:.95}));floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;S.add(floor);
+const M=(c,o={})=>new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:.5},o));
+const mesh=(g,m,x=0,y=0,z=0)=>{const o=new THREE.Mesh(g,m);o.position.set(x,y,z);o.castShadow=true;return o};
+const tex=(w,h,fn)=>{const c=document.createElement('canvas');c.width=w;c.height=h;fn(c.getContext('2d'),w,h);const t=new THREE.CanvasTexture(c);t.anisotropy=4;return t};
+const red=M(0xd8231b,{roughness:.35}),blk=M(0x111111,{roughness:.4}),grn=M(0x1f9d4a,{roughness:.35}),metal=M(0xbcc0c6,{metalness:.9,roughness:.3});
+const Y=new V3(0,1,0);
+function seg(a,b,m,r){a=new V3(...a);b=new V3(...b);const d=b.clone().sub(a),o=mesh(new THREE.CylinderGeometry(r,r,d.length(),12),m);o.position.copy(a).add(b).multiplyScalar(.5);o.quaternion.setFromUnitVectors(Y,d.normalize());return o}
+function wire(p,m,r=.09){p.forEach((q,i)=>{S.add(mesh(new THREE.SphereGeometry(r,12,8),m,...q));if(i)S.add(seg(p[i-1],q,m,r))})}
+const comps=[],users=[];
+function reg(g,name,x,y,z,ry=0,ex={}){g.position.set(x,y,z);g.rotation.y=ry;g.userData=Object.assign({pick:1,name},ex);S.add(g);comps.push(g);return g}
+const BC={br:0x6b3a14,bk:0x151515,or:0xf08a1c,rd:0xd62828,gd:0xd4af37,yl:0xf2d03b,gn:0x2e9d4f,bl:0x2f5fd0,vi:0x7a3fa0};
+function resistor(b,name,x,z,ry,ex){const g=new THREE.Group(),r=new THREE.Group(),bm=M(0xe3c690,{roughness:.6});
+ r.add(mesh(new THREE.CylinderGeometry(.04,.04,1.4,8),metal),mesh(new THREE.CylinderGeometry(.24,.24,.8,16),bm));
+ [-.4,.4].forEach(y=>r.add(mesh(new THREE.SphereGeometry(.24,16,10),bm,0,y,0)));
+ b.forEach((c,i)=>r.add(mesh(new THREE.CylinderGeometry(.255,.255,.07,16),M(BC[c]),0,-.28+i*.19,0)));
+ r.rotation.z=Math.PI/2;g.add(r);return reg(g,name,x,.27,z,ry,ex)}
+function led(c,name,x,z,ex={}){const g=new THREE.Group(),m=M(c,{transparent:true,opacity:.93,roughness:.15,emissive:c,emissiveIntensity:0});
+ g.add(mesh(new THREE.CylinderGeometry(.5,.5,.1,24),m,0,.98,0),mesh(new THREE.CylinderGeometry(.42,.42,.55,24),m,0,1.25,0),mesh(new THREE.SphereGeometry(.42,24,12,0,Math.PI*2,0,Math.PI/2),m,0,1.525,0));
+ [-.3,.3].forEach(x=>g.add(mesh(new THREE.CylinderGeometry(.04,.04,.73,8),metal,x,.615,0)));
+ return reg(g,name,x,0,z,0,Object.assign({led:m},ex))}
+function ldr(name,x,z,ex){const g=new THREE.Group(),t=tex(128,128,(c)=>{c.fillStyle='#e6cfae';c.fillRect(0,0,128,128);c.strokeStyle='#6b4a3a';c.lineWidth=8;c.beginPath();for(let i=0,y=22;y<110;y+=22,i++){c.lineTo(i%2?106:22,y);c.lineTo(i%2?22:106,y)}c.stroke()});
+ g.add(mesh(new THREE.CylinderGeometry(.7,.7,.1,32),M(0xb23a2e),0,.3,0),mesh(new THREE.CylinderGeometry(.62,.62,.16,32),[M(0xe6cfae),new THREE.MeshStandardMaterial({map:t,roughness:.5}),M(0xe6cfae)],0,.33,0));
+ [-.15,.15].forEach(x=>g.add(seg([x,.25,.6],[x,.25,1.7],metal,.035)));return reg(g,name,x,0,z,0,ex)}
+function npn(name,x,z,ex){const g=new THREE.Group(),t=tex(128,160,(c,w,h)=>{c.fillStyle='#161616';c.fillRect(0,0,w,h);c.fillStyle='#d8d8d8';c.font='bold 26px system-ui';c.textAlign='center';c.fillText('NPN',64,70);c.font='bold 22px system-ui';c.fillText('2N2222',64,100)});
+ g.add(mesh(new THREE.BoxGeometry(.8,1,1),blk,0,.55,0));const p=new THREE.Mesh(new THREE.PlaneGeometry(.76,.96),new THREE.MeshBasicMaterial({map:t}));p.rotation.x=-Math.PI/2;p.position.y=1.06;g.add(p);
+ g.add(seg([0,.25,.5],[0,.25,.7],metal,.04),seg([0,.25,-.5],[0,.25,-.7],metal,.04),seg([-.4,.25,0],[-.5,.25,0],metal,.04));return reg(g,name,x,0,z,0,ex)}
+function capac(name,x,z,ex){const g=new THREE.Group();g.add(mesh(new THREE.CylinderGeometry(.35,.35,1.2,24),M(0x1f4aa8),0,.6,0),mesh(new THREE.CylinderGeometry(.33,.33,.03,24),metal,0,1.21,0),mesh(new THREE.BoxGeometry(.04,1.1,.2),M(0xcfd8dc),.34,.6,0));return reg(g,name,x,0,z,0,ex)}
+function label(a,b,x,y,z){const t=tex(256,96,(c,w,h)=>{c.fillStyle='rgba(255,255,255,.93)';c.beginPath();c.roundRect?c.roundRect(4,4,w-8,h-8,18):c.rect(4,4,w-8,h-8);c.fill();c.fillStyle='#17181a';c.textAlign='center';c.font='bold 34px system-ui';c.fillText(a,128,b?42:60);if(b){c.font='28px system-ui';c.fillText(b,128,76)}});
+ const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t,depthTest:false,transparent:true}));s.scale.set(2.2,.82,1);s.position.set(x,y,z);s.renderOrder=5;labels.add(s)}
+const labels=new THREE.Group();S.add(labels);
+// ---- Rangkaian utama ----
+const bat=new THREE.Group(),bt=tex(256,256,(c,w,h)=>{c.fillStyle='#111';c.fillRect(0,0,w,h);c.fillStyle='#f1f1f1';c.font='bold 120px system-ui';c.textAlign='center';c.fillText('9V',128,130);c.font='bold 34px system-ui';c.fillStyle='#bbb';c.fillText('ALKALINE',128,185)});
+bat.add(mesh(new THREE.BoxGeometry(2.2,2,1.4),blk,0,1,0),mesh(new THREE.BoxGeometry(2.2,1,1.4),M(0xc99a2e,{metalness:.7,roughness:.35}),0,2.5,0),
+ mesh(new THREE.CylinderGeometry(.28,.28,.3,24),metal,-.6,3.15,0),mesh(new THREE.CylinderGeometry(.28,.28,.3,24),metal,.6,3.15,0));
+const bp=new THREE.Mesh(new THREE.PlaneGeometry(2,2),new THREE.MeshBasicMaterial({map:bt}));bp.position.set(0,1,.71);bat.add(bp);reg(bat,'Baterai 9V',-6.1,0,1.3);
+wire([[-6.7,3.2,1.3],[-6.7,3.7,1.3],[-6.7,3.7,-3],[-6.7,.25,-3],[-5.4,.25,-3]],red);wire([[-3.8,.25,-3],[-2.5,.25,-3],[1.8,.25,-3]],red);
+// ---- Saklar ----
+let sw=true,swA=0;const swG=new THREE.Group(),lev=new THREE.Group();
+swG.add(mesh(new THREE.BoxGeometry(1.9,.2,1),M(0x2b2f36),0,.1,0),mesh(new THREE.CylinderGeometry(.14,.14,.3,16),metal,-.8,.3,0),mesh(new THREE.CylinderGeometry(.14,.14,.3,16),metal,.8,.3,0),new THREE.Mesh(new THREE.BoxGeometry(2.3,1,1.5),new THREE.MeshBasicMaterial({visible:false})));
+lev.position.set(-.8,.4,0);lev.add(mesh(new THREE.BoxGeometry(1.6,.1,.16),M(0xd0d3d8,{metalness:.8,roughness:.3}),.8,0,0),mesh(new THREE.CylinderGeometry(.09,.09,.45,12),M(0xe8a317),.45,.25,0));swG.add(lev);
+reg(swG,'Saklar',-4.6,0,-3,0,{sw:1});
+function swUi(){const b=$('#sw');b.textContent='Saklar: '+(sw?'ON':'OFF');b.classList.toggle('on',sw)}
+function toggleSw(){sw=!sw;swUi();toast(sw?'Saklar ON, arus mengalir':'Saklar OFF, arus terputus')}
+$('#sw').onclick=toggleSw;
+// ---- Aliran arus ----
+let flowOn=true;const FL=[];
+function addFlow(pts){const v=pts.map(p=>new V3(...p)),cum=[0];for(let i=1;i<v.length;i++)cum.push(cum[i-1]+v[i].distanceTo(v[i-1]));
+ const len=cum[cum.length-1],n=Math.floor(len/1.1),m=new THREE.MeshBasicMaterial({color:0xffc933,transparent:true}),g=new THREE.SphereGeometry(.13,10,8),ps=[];
+ for(let i=0;i<n;i++){const o=new THREE.Mesh(g,m);S.add(o);ps.push(o)}FL.push({v,cum,len,n,m,ps,ph:0})}
+function flowUpd(dt,I){FL.forEach((f,k)=>{const q=I[k];f.ph=(f.ph+dt*(1.2+3.5*q)/f.len)%1;const on=flowOn&&q>.02;
+ f.ps.forEach((o,i)=>{o.visible=on;if(!on)return;const s=((i/f.n+f.ph)%1)*f.len;let j=1;while(j<f.cum.length-1&&f.cum[j]<s)j++;
+  o.position.lerpVectors(f.v[j-1],f.v[j],(s-f.cum[j-1])/(f.cum[j]-f.cum[j-1]||1));o.scale.setScalar(.7+.5*q)});f.m.opacity=.4+.6*q})}
+const RET=[[-4.6,.25,3.2],[-4.6,3.7,3.2],[-4.6,3.7,1.3],[-5.5,3.7,1.3],[-5.5,3.2,1.3]];
+addFlow([[-6.7,3.2,1.3],[-6.7,3.7,1.3],[-6.7,3.7,-3],[-6.7,.25,-3],[-2.5,.25,-3]]);
+addFlow([[-2.5,.25,-3],[-2.5,.25,3.2],...RET]);
+addFlow([[-2.5,.25,0],[6.6,.25,0],[6.6,.25,3.2],...RET]);
+addFlow([[-2.5,.25,-3],[6.6,.25,-3],[6.6,.25,3.2],...RET]);
+$('#flow').onclick=e=>{flowOn=!flowOn;e.target.classList.toggle('on',flowOn)};
+wire([[2.4,.25,-3],[6.6,.25,-3],[6.6,.25,-.7]],red);
+wire([[-5.5,3.2,1.3],[-5.5,3.7,1.3],[-4.6,3.7,1.3],[-4.6,3.7,3.2],[-4.6,.25,3.2],[6.6,.25,3.2],[6.6,.25,.7]],blk);
+wire([[-2.5,.25,-3],[-2.5,.25,-2.2]],grn);wire([[-2.5,.25,-.8],[-2.5,.25,0],[-2.5,.25,.85]],grn);
+wire([[-2.5,.25,0],[1.8,.25,0]],grn);wire([[3.2,.25,0],[6.1,.25,0]],grn);
+[[-2.5,-3,grn],[-2.5,0,grn],[-2.5,3.2,blk]].forEach(j=>S.add(mesh(new THREE.SphereGeometry(.16,16,10),j[2],j[0],.25,j[1])));
+resistor(['br','bk','or','gd'],'R1 10 kΩ',-2.5,-1.5,Math.PI/2);
+resistor(['br','bk','rd','gd'],'R2 1 kΩ',2.5,0,0);
+ldr('LDR1',-2.5,1.5);led(0xff2a1a,'LED merah',2.1,-3);npn('Transistor NPN 2N2222',6.6,0);
+label('9V',0,-6.1,4.5,1.3);label('Saklar',0,-4.6,1.5,-3);label('R1','10 kΩ',-1,1.5,-1.5);label('R2','1 kΩ',2.5,1.6,0);label('LDR1',0,-2.5,1.4,1.5);label('LED',0,2.1,2.5,-3);label('NPN','2N2222',6.6,2,0);
+// ---- Simulasi ----
+let light=.9,ledI=0;const bgc=new THREE.Color(),flc=new THREE.Color(),dk=new THREE.Color(0x07080b);
+const fmt=r=>r>=1e6?(r/1e6).toFixed(1)+' MΩ':r>=1e3?(r/1e3).toFixed(1)+' kΩ':Math.round(r)+' Ω';
+let lastH='';
+function sim(dt){const Rl=Math.pow(10,2.4+3.9*(1-light)),Vb=(sw?9:0)*Rl/(1e4+Rl),b=cl((Vb-.7)/3,0,1);
+ ledI+=(b-ledI)*Math.min(1,dt*8);swA+=((sw?0:.7)-swA)*Math.min(1,dt*10);lev.rotation.z=swA;
+ const pA=sw?.15+.85*cl(9/(1e4+Rl)/9e-4,0,1):0,pC=b,pB=b*.6;flowUpd(dt,[sw?Math.max(pA,pC):0,pA,pB,pC]);
+ comps.forEach(o=>{if(o.userData.led)o.userData.led.emissiveIntensity=ledI*2});
+ pl.intensity=ledI*2.5;amb.intensity=.2+.8*light;sun.intensity=.15+.95*light;
+ S.background=ar.on?null:bgc.clone().lerp(dk,(1-light)*.6);floor.visible=!ar.on;floor.material.color.copy(flc);
+ const h=[`Cahaya ${Math.round(light*100)}%`,`LDR ${fmt(Rl)}`,`V basis ${Vb.toFixed(2)} V`,`<i class="${b>0?'on':''}"></i>LED ${b>0?'menyala '+Math.round(b*100)+'%':'mati'}`];
+ const k=h.join('|');if(k!==lastH){lastH=k;['h1','h2','h3','h4'].forEach((id,i)=>$('#'+id).innerHTML=h[i])}}
+function setLight(v){light=cl(v,0,1);$('#light').value=Math.round(light*100);$('#lv').textContent=Math.round(light*100)}
+$('#light').oninput=e=>setLight(e.target.value/100);
+function theme(){const cs=getComputedStyle(document.documentElement);bgc.set(cs.getPropertyValue('--bg').trim());flc.set(cs.getPropertyValue('--floor').trim())}
+matchMedia('(prefers-color-scheme:dark)').addEventListener('change',theme);theme();
+// ---- Kamera orbit ----
+const home={th:.3,ph:.93,rd:16,T:new V3(0,.5,.3)},T=home.T.clone();let th=home.th,ph=home.ph,rd=home.rd,goal=null,auto=false;
+const views={iso:{th:.6,ph:.95,rd:17,T:new V3(0,.5,.3)},top:{th:0,ph:.05,rd:17,T:new V3(0,0,.2)},front:{th:0,ph:1.4,rd:15,T:new V3(0,1,.3)}};
+function camSet(){cam.position.set(T.x+rd*Math.sin(ph)*Math.sin(th),T.y+rd*Math.cos(ph),T.z+rd*Math.sin(ph)*Math.cos(th));cam.lookAt(T)}
+function syncCam(){const v=cam.position.clone().sub(T);rd=v.length();ph=Math.acos(cl(v.y/rd,-1,1));th=Math.atan2(v.x,v.z)}
+document.querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{stopTour();goal=views[b.dataset.v]});
+$('#auto').onclick=e=>{stopTour();auto=!auto;e.target.classList.toggle('on',auto)};
+const ptr=new Map(),ray=new THREE.Raycaster(),ndc=new THREE.Vector2(),gp=new THREE.Plane(new V3(0,1,0),0),off=new V3();
+let mode=null,drag=null,pinch=0,sel=null;
+const bh=new THREE.BoxHelper(new THREE.Object3D(),0xd92d20);bh.visible=false;S.add(bh);
+const toNdc=e=>{const r=cv.getBoundingClientRect();ndc.set((e.clientX-r.left)/r.width*2-1,-((e.clientY-r.top)/r.height)*2+1);ray.setFromCamera(ndc,cam)};
+function pickAt(e){toNdc(e);for(const i of ray.intersectObjects(comps,true)){let o=i.object;while(o&&!o.userData.pick)o=o.parent;if(o)return o}return null}
+function select(o){sel=o;if(o){bh.setFromObject(o);bh.visible=true}else bh.visible=false;
+ }
+const dist=()=>{const p=[...ptr.values()];return Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y)||1};
+cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);ptr.set(e.pointerId,{x:e.clientX,y:e.clientY});stopTour();goal=null;
+ if(ptr.size===1){const o=pickAt(e);if(o&&o.userData.sw&&ar.on&&e.button===0){toggleSw();ptr.delete(e.pointerId);return}mode=(e.button===2||e.shiftKey)?'pan':'rot'}
+ else{mode='pinch';pinch=dist()}});
+cv.addEventListener('pointermove',e=>{const p=ptr.get(e.pointerId);if(!p)return;const dx=e.clientX-p.x,dy=e.clientY-p.y;p.x=e.clientX;p.y=e.clientY;
+ if(mode==='pinch'&&ptr.size>1){const d=dist();rd=cl(rd*pinch/d,3,40);pinch=d}
+ else if(mode==='rot'){th-=dx*.006;ph=cl(ph-dy*.006,.05,1.5)}
+ else if(mode==='pan'){const k=rd*.0016;T.x+=-Math.cos(th)*dx*k-Math.sin(th)*dy*k;T.z+=Math.sin(th)*dx*k-Math.cos(th)*dy*k}
+ else if(mode==='drag'){toNdc(e);const q=new V3();if(ray.ray.intersectPlane(gp,q)){drag.position.x=cl(q.x+off.x,-16,16);drag.position.z=cl(q.z+off.z,-13,13);bh.update()}}});
+const up=e=>{ptr.delete(e.pointerId);if(ptr.size<2&&mode==='pinch')mode=null;if(!ptr.size){mode=null;drag=null}};
+cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);cv.addEventListener('contextmenu',e=>e.preventDefault());
+cv.addEventListener('wheel',e=>{e.preventDefault();stopTour();goal=null;rd=cl(rd*Math.exp(e.deltaY*.0012),3,40)},{passive:false});
+// ---- Tambah objek ----
+const LC=[0xff2a1a,0x22c55e,0x3b82f6,0xfacc15],RB=[['rd','vi','br','gd'],['or','or','br','gd'],['yl','vi','or','gd'],['br','gn','rd','gd']];
+$('.body').addEventListener('click',e=>{const a=e.target.dataset.a;if(!a)return;
+ if(users.length>=28)return toast('Batas 28 objek tambahan tercapai');
+ const n=users.length,x=-6+(n%7)*2,z=5.6+Math.floor(n/7)*2,ex={user:1};let o;
+ if(a==='res')o=resistor(RB[n%4],'Resistor',x,z,0,ex);
+ if(a==='led')o=led(LC[n%4],'LED',x,z,ex);
+ if(a==='ldr')o=ldr('LDR',x,z-.5,ex);
+ if(a==='npn')o=npn('Transistor NPN',x,z,ex);
+ if(a==='cap')o=capac('Kapasitor',x,z,ex);
+ users.push(o);select(o);toast(o.userData.name+' ditambahkan, seret untuk memindahkan')});
+
+function del(){if(!sel||!sel.userData.user)return;S.remove(sel);comps.splice(comps.indexOf(sel),1);users.splice(users.indexOf(sel),1);select(null)}
+
+addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;if(e.key==='s'||e.key==='S')toggleSw()});
+$('#lab').onclick=e=>{labels.visible=!labels.visible;e.target.classList.toggle('on',labels.visible)};
+$('#min').onclick=()=>$('#panel').classList.toggle('min');
+// ---- Tur sinematik ----
+const W=[{p:[0,9,13],t:[0,.5,.3],l:.9,s:'Lampu malam otomatis: menyala saat gelap'},
+{p:[-10,5.5,8],t:[-6,2,1.3],l:.9,s:'Baterai 9V menyuplai seluruh rangkaian'},
+{p:[-3,4,2],t:[-4.6,.3,-3],l:.9,s:'Saklar menyambung atau memutus arus dari baterai'},
+{p:[-6,3.2,5.5],t:[-2.5,.3,0],l:.9,s:'R1 dan LDR1 membentuk pembagi tegangan'},
+{p:[2.5,3.4,4.6],t:[2.5,.3,0],l:.5,s:'R2 1 kΩ membatasi arus ke basis transistor'},
+{p:[10,3.6,4.2],t:[6.6,.5,0],l:.3,s:'Transistor 2N2222 bekerja sebagai saklar'},
+{p:[3.6,3.6,-.2],t:[2.1,1,-3],l:.12,s:'Gelap: LDR bernilai besar, LED menyala'},
+{p:[0,15,.6],t:[0,0,.2],l:.9,s:'Terang kembali: LED padam'}];
+const cp=new THREE.CatmullRomCurve3(W.map(w=>new V3(...w.p)),false,'centripetal'),ct=new THREE.CatmullRomCurve3(W.map(w=>new V3(...w.t)),false,'centripetal');
+const DUR=5*(W.length-1);let tour=false,tt=0;
+function startTour(){ar.root.visible=true;sw=true;swUi();tour=true;tt=0;goal=null;auto=false;$('#auto').classList.remove('on');$('#tour').textContent='Hentikan tur';$('#tour').classList.remove('pri');$('#cap').hidden=false}
+function stopTour(){if(!tour)return;tour=false;if(!ar.on)ar.root.visible=false;$('#cap').hidden=true;$('#tour').textContent='Tur sinematik';$('#tour').classList.add('pri');syncCam()}
+$('#tour').onclick=()=>tour?stopTour():ar.on?toast('Matikan mode AR untuk memakai tur'):startTour();
+// ---- Screenshot & reset ----
+let tm;function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('s');clearTimeout(tm);tm=setTimeout(()=>t.classList.remove('s'),2400)}
+$('#shot').onclick=async()=>{R.render(S,cam);const blob=await new Promise(r=>shotCv().toBlob(r,'image/png')),name='rangkaian-3d-'+Date.now()+'.png';
+ try{const d=window.claude&&claude.use?await claude.use('downloads'):null;
+  if(d){await d.save({filename:name,data:blob});toast('Screenshot disimpan')}
+  else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();toast('Screenshot diunduh')}}
+ catch(err){toast(err&&err.code==='declined'?'Penyimpanan dibatalkan':'Screenshot gagal disimpan')}};
+$('#reset').onclick=()=>{stopTour();users.slice().forEach(o=>{S.remove(o);comps.splice(comps.indexOf(o),1)});users.length=0;select(null);
+ th=home.th;ph=home.ph;rd=home.rd;T.copy(home.T);goal=null;auto=false;$('#auto').classList.remove('on');setLight(.9);ledI=0;sw=true;swUi();flowOn=true;$('#flow').classList.add('on');labels.visible=true;$('#lab').classList.add('on');toast('Tampilan direset')};
+// ---- Loop ----
+function rs(){const w=innerWidth,h=innerHeight;R.setPixelRatio(Math.min(devicePixelRatio,2));R.setSize(w,h,false);cam.aspect=w/h;cam.fov=w/h<1?62:40;cam.updateProjectionMatrix()}
+addEventListener('resize',rs);rs();
+let prev=performance.now();
+function loop(now){requestAnimationFrame(loop);const dt=Math.min(.05,(now-prev)/1000);prev=now;
+ if(tour){tt+=dt;const u=tt/DUR;if(u>=1)stopTour();else{const e=u*u*(3-2*u),f=e*(W.length-1),i=Math.min(W.length-2,Math.floor(f)),k=f-i,s=k*k*(3-2*k);
+  cam.position.copy(cp.getPoint(e));T.copy(ct.getPoint(e));cam.lookAt(T);setLight(W[i].l+(W[i+1].l-W[i].l)*s);$('#cap').textContent=W[Math.round(f)].s}}
+ if(!tour){if(goal){const d=((goal.th-th+Math.PI)%(2*Math.PI)+2*Math.PI)%(2*Math.PI)-Math.PI;th+=d*.1;ph+=(goal.ph-ph)*.1;rd+=(goal.rd-rd)*.1;T.lerp(goal.T,.1);if(Math.abs(d)+Math.abs(goal.ph-ph)+Math.abs(goal.rd-rd)<.01)goal=null}
+  if(auto&&!ptr.size)th+=dt*.35;if(ar.on)arStep(dt);else camSet()}
+ sim(dt);R.render(S,cam)}
+// ---- Mode AR: marker 5x5 (tepi hitam + pola 3x3), deteksi tanpa pustaka luar ----
+const ar={on:false,st:null,hit:false,t:0,sm:.22,root:new THREE.Group(),q:new THREE.Quaternion(),p:new V3(),msg:''};
+const vid=$('#vid'),dc=document.createElement('canvas'),dx=dc.getContext('2d',{willReadFrequently:true}),arst=$('#arst');
+const PAT=[1,0,1,0,0,1,0,1,1];
+function drawMarker(c,px){c.width=c.height=px;const g=c.getContext('2d'),u=px/7;g.fillStyle='#fff';g.fillRect(0,0,px,px);g.fillStyle='#000';g.fillRect(u,u,5*u,5*u);g.fillStyle='#fff';g.fillRect(2*u,2*u,3*u,3*u);g.fillStyle='#000';PAT.forEach((v,k)=>{if(v)g.fillRect((2+k%3)*u,(2+(k/3|0))*u,u,u)})}
+let W0=0,H0=0,gray,bin,integ,lab,qq;
+function prep(w,h){W0=w;H0=h;dc.width=w;dc.height=h;gray=new Uint8Array(w*h);bin=new Uint8Array(w*h);integ=new Int32Array((w+1)*(h+1));lab=new Uint8Array(w*h);qq=new Int32Array(w*h)}
+function detect(){const w=W0,h=H0,iw=w+1;dx.drawImage(vid,0,0,w,h);const d=dx.getImageData(0,0,w,h).data;
+ for(let i=0;i<w*h;i++)gray[i]=(d[i*4]*77+d[i*4+1]*150+d[i*4+2]*29)>>8;
+ for(let y=0;y<h;y++){let s=0;for(let x=0;x<w;x++){s+=gray[y*w+x];integ[(y+1)*iw+x+1]=integ[y*iw+x+1]+s}}
+ const r=12;for(let y=0;y<h;y++){const y0=Math.max(0,y-r),y1=Math.min(h,y+r+1);for(let x=0;x<w;x++){const x0=Math.max(0,x-r),x1=Math.min(w,x+r+1),m=(integ[y1*iw+x1]-integ[y0*iw+x1]-integ[y1*iw+x0]+integ[y0*iw+x0])/((x1-x0)*(y1-y0));bin[y*w+x]=gray[y*w+x]<m-14?1:0}}
+ const far=(n,px,py)=>{let b=-1,bi=0;for(let k=0;k<n;k++){const p=qq[k],x=p%w,y=(p/w)|0,e=(x-px)*(x-px)+(y-py)*(y-py);if(e>b){b=e;bi=p}}return[bi%w,(bi/w)|0]};
+ const quad=(n,cx,cy)=>{const A=far(n,cx,cy),C=far(n,A[0],A[1]),vx=C[0]-A[0],vy=C[1]-A[1],L=Math.hypot(vx,vy);if(L<14)return null;
+  let mx=0,mn=0,B=A,D=A;for(let k=0;k<n;k++){const p=qq[k],x=p%w,y=(p/w)|0,c=((x-A[0])*vy-(y-A[1])*vx)/L;if(c>mx){mx=c;B=[x,y]}if(c<mn){mn=c;D=[x,y]}}
+  if(mx<.15*L||-mn<.15*L)return null;let q=[A,B,C,D],s=0;for(let i=0;i<4;i++){const a=q[i],b=q[(i+1)%4];s+=a[0]*b[1]-b[0]*a[1]}
+  if(s<0){q=[A,D,C,B];s=-s}s/=2;return n/s<.45||n/s>1.15?null:q};
+ const read=q=>{for(let r=0;r<4;r++){const c=[0,1,2,3].map(k=>q[(k+r)%4]),pt=(u,v)=>{const x=c[0][0]*(1-u)*(1-v)+c[1][0]*u*(1-v)+c[2][0]*u*v+c[3][0]*(1-u)*v,y=c[0][1]*(1-u)*(1-v)+c[1][1]*u*(1-v)+c[2][1]*u*v+c[3][1]*(1-u)*v;return bin[Math.round(y)*w+Math.round(x)]??0};
+  let bd=0,mt=0;for(let j=0;j<5;j++)for(let i=0;i<5;i++){const v=pt((i+.5)/5,(j+.5)/5);if(i>0&&i<4&&j>0&&j<4)mt+=v===PAT[(j-1)*3+i-1]?1:0;else bd+=v}
+  if(bd>=15&&mt>=8)return c}return null};
+ lab.fill(0);
+ for(let s=0;s<w*h;s++){if(!bin[s]||lab[s])continue;let hd=0,tl=0,sx=0,sy=0;qq[tl++]=s;lab[s]=1;
+  while(hd<tl){const p=qq[hd++],x=p%w,y=(p/w)|0;sx+=x;sy+=y;
+   if(x>0&&bin[p-1]&&!lab[p-1]){lab[p-1]=1;qq[tl++]=p-1}if(x<w-1&&bin[p+1]&&!lab[p+1]){lab[p+1]=1;qq[tl++]=p+1}
+   if(y>0&&bin[p-w]&&!lab[p-w]){lab[p-w]=1;qq[tl++]=p-w}if(y<h-1&&bin[p+w]&&!lab[p+w]){lab[p+w]=1;qq[tl++]=p+w}}
+  if(tl<250||tl>w*h*.6)continue;const q=quad(tl,sx/tl,sy/tl);if(q){const c=read(q);if(c)return c}}
+ return null}
+function gauss(A,b){const n=8;for(let i=0;i<n;i++){let m=i;for(let r=i+1;r<n;r++)if(Math.abs(A[r][i])>Math.abs(A[m][i]))m=r;[A[i],A[m]]=[A[m],A[i]];[b[i],b[m]]=[b[m],b[i]];
+ for(let r=i+1;r<n;r++){const f=A[r][i]/A[i][i];for(let c=i;c<n;c++)A[r][c]-=f*A[i][c];b[r]-=f*b[i]}}
+ const x=Array(n);for(let i=n-1;i>=0;i--){let s=b[i];for(let c=i+1;c<n;c++)s-=A[i][c]*x[c];x[i]=s/A[i][i]}return x}
+function pose(cs){const f=.82*Math.max(W0,H0),U=[[-1,-1],[1,-1],[1,1],[-1,1]],A=[],b=[];
+ cs.forEach((c,i)=>{const x=(c[0]-W0/2)/f,y=(c[1]-H0/2)/f,u=U[i][0],v=U[i][1];A.push([u,v,1,0,0,0,-u*x,-v*x]);b.push(x);A.push([0,0,0,u,v,1,-u*y,-v*y]);b.push(y)});
+ const x=gauss(A,b),h1=new V3(x[0],x[3],x[6]),h2=new V3(x[1],x[4],x[7]),h3=new V3(x[2],x[5],1),s=2/(h1.length()+h2.length());
+ h1.multiplyScalar(s);h2.multiplyScalar(s);h3.multiplyScalar(s);if(h3.z<0){h1.negate();h2.negate();h3.negate()}
+ const r1=h1.normalize(),r2=h2.sub(r1.clone().multiplyScalar(r1.dot(h2))).normalize(),r3=new V3().crossVectors(r1,r2),F=v=>new V3(v.x,-v.y,-v.z);
+ return{p:F(h3),q:new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(F(r1),F(r3.clone().negate()),F(r2)))}}
+function arStep(dt){const vw=vid.videoWidth,vh=vid.videoHeight;
+ if(vw&&vh){const k=320/Math.max(vw,vh),w=Math.round(vw*k),h=Math.round(vh*k);if(w!==W0||h!==H0)prep(w,h)}
+ if(W0&&vid.readyState>=2){const c=detect();if(c){const P=pose(c);if(!ar.hit){ar.p.copy(P.p);ar.q.copy(P.q)}else{ar.p.lerp(P.p,.55);ar.q.slerp(P.q,.55)}ar.hit=true;ar.t=0}else{ar.t+=dt;if(ar.t>.5)ar.hit=false}}
+ ar.root.visible=ar.hit;ar.root.position.copy(ar.p);ar.root.quaternion.copy(ar.q);ar.root.scale.setScalar(ar.sm);
+ const W=innerWidth,H=innerHeight;cam.position.set(0,0,0);cam.rotation.set(0,0,0);
+ if(W0){const f=.82*Math.max(W0,H0)*Math.max(W/W0,H/H0);cam.fov=2*Math.atan(H/2/f)*180/Math.PI}cam.aspect=W/H;cam.updateProjectionMatrix();
+ const m=ar.hit?'Marker terdeteksi':'Arahkan kamera ke marker';if(m!==ar.msg){ar.msg=m;arst.textContent=m}}
+async function arStart(){
+ if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia)return toast('Browser ini tidak mendukung akses kamera');
+ try{ar.st=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false})}
+ catch(e){return toast('Kamera tidak bisa dibuka. Izinkan kamera, atau buka halaman ini langsung di tab browser')}
+ vid.srcObject=ar.st;vid.hidden=false;try{await vid.play()}catch(e){}
+ stopTour();goal=null;auto=false;$('#auto').classList.remove('on');
+ 
+ sun.castShadow=false;ar.on=true;ar.hit=false;ar.msg='';W0=0;arst.hidden=false;$('#panel').classList.add('min');$('#ar').textContent='Matikan AR';$('#ar').classList.add('on')}
+function arStop(){if(ar.st)ar.st.getTracks().forEach(t=>t.stop());ar.st=null;vid.srcObject=null;vid.hidden=true;
+ ar.root.visible=false;ar.root.position.set(0,0,0);ar.root.quaternion.identity();ar.root.scale.setScalar(1);sun.castShadow=true;ar.on=false;ar.msg='';arst.hidden=false;arst.textContent=EMPTY;rs();
+ $('#ar').textContent='Mulai AR';$('#ar').classList.remove('on')}
+function shotCv(){if(!ar.on||!vid.videoWidth)return cv;const c=document.createElement('canvas'),W=c.width=cv.width,H=c.height=cv.height,g=c.getContext('2d'),s=Math.max(W/vid.videoWidth,H/vid.videoHeight),dw=vid.videoWidth*s,dh=vid.videoHeight*s;
+ g.drawImage(vid,(W-dw)/2,(H-dh)/2,dw,dh);g.drawImage(cv,0,0);return c}
+async function saveBlob(blob,name,ok){try{const d=window.claude&&claude.use?await claude.use('downloads'):null;
+ if(d)await d.save({filename:name,data:blob});else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove()}toast(ok)}
+ catch(err){toast(err&&err.code==='declined'?'Penyimpanan dibatalkan':'Gagal menyimpan')}}
+const EMPTY='Rangkaian tampil di mode AR: tekan Mulai AR';S.children.slice().forEach(o=>{if(o!==amb&&o!==sun&&o!==floor&&o!==bh)ar.root.add(o)});S.add(ar.root);ar.root.visible=false;arst.hidden=false;arst.textContent=EMPTY;
+$('#ar').onclick=()=>ar.on?arStop():arStart();
+$('#arsz').oninput=e=>{ar.sm=e.target.value/100};
+$('#mkb').onclick=()=>{drawMarker($('#mkc'),700);$('#mk').hidden=false};
+$('#mkx').onclick=()=>{$('#mk').hidden=true};
+$('#mkd').onclick=()=>$('#mkc').toBlob(b=>saveBlob(b,'marker-ar.png','Marker disimpan'));
+// ---- Menu belajar ----
+const scrs=[...document.querySelectorAll('.scr')];
+function go(id){scrs.forEach(s=>{s.hidden=s.id!==id});if(id==='quiz')qzStart()}
+document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(!g)return;const k=g.dataset.go;
+ if(k==='ar'){go('');if(!ar.on)arStart()}
+ else if(k==='tour'){go('');if(!tour&&!ar.on)startTour()}
+ else if(k==='marker')$('#mkb').click();
+ else go(k)});
+$('#hb').onclick=()=>{stopTour();if(ar.on)arStop();go('home')};
+function calc(){const l=$('#cc').value/100,Rl=Math.pow(10,2.4+3.9*(1-l)),Vb=9*Rl/(1e4+Rl);$('#co').textContent='R LDR '+fmt(Rl)+', Vb '+Vb.toFixed(2)+' V, LED '+(Vb>.7?'menyala':'padam')}
+$('#cc').oninput=calc;calc();
+const QZ=[{q:'Apa fungsi LDR pada rangkaian ini?',o:['Menyimpan muatan listrik','Mengubah hambatan sesuai cahaya','Menguatkan arus','Menyearahkan arus'],a:1,e:'LDR adalah sensor cahaya: hambatannya turun saat terang dan naik saat gelap.'},
+{q:'Saat ruangan gelap, hambatan LDR menjadi...',o:['Mengecil','Membesar','Tetap','Nol'],a:1,e:'Dalam gelap, hambatan LDR bisa mencapai ratusan kilo-ohm hingga mega-ohm.'},
+{q:'Transistor NPN silikon mulai menghantar pada tegangan basis-emitor sekitar...',o:['0,1 V','0,7 V','3 V','9 V'],a:1,e:'Ambangnya sekitar 0,7 V. Di bawah itu transistor mati.'},
+{q:'Untuk apa R2 1 kΩ dipasang di depan basis?',o:['Membatasi arus basis','Menyalakan LED','Menggantikan LDR','Menaikkan tegangan baterai'],a:0,e:'R2 melindungi basis transistor dari arus berlebih.'},
+{q:'Saat terang, mengapa LED padam?',o:['Baterai habis','Tegangan basis rendah sehingga transistor mati','LED rusak','Saklar terbuka'],a:1,e:'LDR yang kecil menahan tegangan basis di bawah 0,7 V, sehingga jalur kolektor ke emitor terputus.'},
+{q:'Jika saklar dimatikan saat gelap, apa yang terjadi?',o:['LED tetap menyala','LED makin terang','LED padam karena arus terputus','LDR rusak'],a:2,e:'Saklar memutus arus dari baterai ke seluruh rangkaian.'}];
+let qi=0,sc=0,qd=false;
+function qzStart(){qi=0;sc=0;qzShow()}
+function qzShow(){const o=$('#qo');qd=false;$('#qn').hidden=true;$('#qe').textContent='';
+ if(qi>=QZ.length){$('#qp').textContent='Selesai';$('#qt').textContent='Skor kamu '+sc+' dari '+QZ.length+(sc===QZ.length?'. Sempurna!':'. Pelajari materinya lagi, lalu ulangi.');o.innerHTML='<button class="pri" id="qr">Ulangi kuis</button>';$('#qr').onclick=qzStart;return}
+ const q=QZ[qi];$('#qp').textContent='Soal '+(qi+1)+' dari '+QZ.length;$('#qt').textContent=q.q;o.innerHTML='';
+ q.o.forEach((t,i)=>{const b=document.createElement('button');b.className='opt';b.textContent=t;b.onclick=()=>{if(qd)return;qd=true;if(i===q.a)sc++;[...o.children].forEach((c,j)=>{if(j===q.a)c.classList.add('ok');else if(j===i)c.classList.add('bad')});
+  $('#qe').textContent=(i===q.a?'Benar. ':'Belum tepat. ')+q.e;$('#qn').hidden=false;$('#qn').textContent=qi===QZ.length-1?'Lihat skor':'Lanjut'};o.appendChild(b)})}
+$('#qn').onclick=()=>{qi++;qzShow()};
+camSet();requestAnimationFrame(loop);
+</script></body></html>

@@ -1,0 +1,6 @@
+{
+  "appId": "com.lampumalam.ar",
+  "appName": "Lampu Malam AR",
+  "webDir": "www",
+  "server": { "androidScheme": "https" }
+}
